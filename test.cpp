@@ -415,4 +415,6 @@ int main()
     void benchmark();
     benchmark();
     cout << endl << "Done." << endl;
+
+    system("pause");
 }
