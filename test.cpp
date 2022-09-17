@@ -380,6 +380,31 @@ class EquityCalculatorTest : public ttest::TestBase
     TTEST_CASE("test 6 - monte carlo") { monteCarloTest(TESTDATA[5]); }
 };
 
+class CardRangeTest : public ttest::TestBase
+{
+    TTEST_CASE("CardRange('T7s-T5s') returns 12 combinations")
+    {
+        CardRange range = CardRange("T7s-T5s");
+        CardRange expectedRange = CardRange("Ts7s,Th7h,Tc7c,Td7d,Ts6s,Th6h,Tc6c,Td6d,Ts5s,Th5h,Tc5c,Td5d");
+        TTEST_EQUAL(range.combinations() == expectedRange.combinations(), true);
+
+    }
+
+    TTEST_CASE("CardRange('J4o-J2o') returns 36 combinations")
+    {
+        CardRange range = CardRange("J4o-J2o");
+        CardRange expectedRange = CardRange("Js4h,Js4c,Js4d,Jh4s,Jh4c,Jh4d,Jc4s,Jc4h,Jc4d,Jd4s,Jd4h,Jd4c,Js3h,Js3c,Js3d,Jh3s,Jh3c,Jh3d,Jc3s,Jc3h,Jc3d,Jd3s,Jd3h,Jd3c,Js2h,Js2c,Js2d,Jh2s,Jh2c,Jh2d,Jc2s,Jc2h,Jc2d,Jd2s,Jd2h,Jd2c");
+        TTEST_EQUAL(range.combinations() == expectedRange.combinations(), true);
+    }
+
+    TTEST_CASE("CardRange('88-66') returns 18 combinations")
+    {
+        CardRange range = CardRange("88-66");
+        CardRange expectedRange = CardRange("8s8h,8s8c,8s8d,8h8d,8h8c,8c8d,7s7h,7s7c,7s7d,7h7d,7h7c,7c7d,6s6h,6s6c,6s6d,6h6d,6h6c,6c6d");
+        TTEST_EQUAL(range.combinations() == expectedRange.combinations(), true);
+    }
+};
+
 void printBuildInfo()
 {
     cout << "=== Build information ===" << endl;
@@ -410,6 +435,8 @@ int main()
     HandEvaluatorTest().run();
     cout << "EquityCalculator:" << endl;
     EquityCalculatorTest().run();
+    cout << "CardRange:" << endl;
+    CardRangeTest().run();
 
     cout << endl << endl << "=== Benchmarks ===" << endl;
     void benchmark();

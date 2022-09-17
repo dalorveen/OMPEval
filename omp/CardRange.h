@@ -23,6 +23,7 @@ public:
     // K4o+ : specified hand and all similar hands with a better kicker (K4 to KQ)
     // 44+ : pocket pair and all higher pairs
     // K4+,Q8s,84 : multiple hands can be combined with comma
+    // J7s-J3s,K8o-K5o,88-22
     // random : all hands
     // Spaces and non-matching characters in the end are ignored. The expressions are case-insensitive.
     CardRange(const std::string& text);
@@ -50,6 +51,7 @@ private:
     void addAll();
     void addCombos(unsigned rank1, unsigned rank2, bool suited, bool offsuited);
     void addCombosPlus(unsigned rank1, unsigned rank2, bool suited, bool offsuited);
+	void addCombosHyphen(unsigned rank1, unsigned rank2, unsigned rank3, unsigned rank4, bool suited, bool offsuited);
     void addCombo(unsigned c1, unsigned c2);
     void removeDuplicates();
     static unsigned charToRank(char c);

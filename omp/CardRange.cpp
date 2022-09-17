@@ -49,22 +49,22 @@ CardRange::CardRange(const std::vector<std::array<uint8_t,2>>& combos)
 // Card mask from a string.
 uint64_t CardRange::getCardMask(const std::string& text)
 {
-    std::locale loc;
-    std::string s;
+	std::locale loc;
+	std::string s;
     for (char c: text) {
-        if (std::isgraph(c, loc))
-            s.push_back(std::tolower(c, loc));
-    }
+		if (std::isgraph(c, loc))
+			s.push_back(std::tolower(c, loc));
+	}
 
     uint64_t cards = 0;
-    for (size_t i = 0; i < s.size() - std::min<size_t>(1, s.size()); i += 2) {
-        unsigned rank = charToRank(s[i]);
-        unsigned suit = charToSuit(s[i + 1]);
-        if (rank == ~0u || suit == ~0u)
-            break;
+	for (size_t i = 0; i < s.size() - std::min<size_t>(1, s.size()); i += 2) {
+		unsigned rank = charToRank(s[i]);
+		unsigned suit = charToSuit(s[i + 1]);
+		if (rank == ~0u || suit == ~0u)
+			break;
         unsigned card = 4 * rank + suit;
         cards |= 1ull << card;
-    }
+	}
 
     return cards;
 }
@@ -103,7 +103,18 @@ bool CardRange::parseHand(const char*&p)
             offsuited = false;
         if (parseChar(p, '+'))
             addCombosPlus(r1, r2, suited, offsuited);
-        else
+        else if (parseChar(p, '-')) {
+            unsigned r3, r4;
+            if (!parseRank(p, r3))
+                return false;
+            if (!parseRank(p, r4))
+                return false;
+            if (parseChar(p, 'o') && suited == true)
+                return false;
+            else if (parseChar(p, 's') && offsuited == true)
+                return false;
+            addCombosHyphen(r1, r2, r3, r4, suited, offsuited);
+        } else
             addCombos(r1, r2, suited, offsuited);
     }
 
@@ -172,6 +183,33 @@ void CardRange::addCombosPlus(unsigned rank1, unsigned rank2, bool suited, bool 
     }
 }
 
+/**
+	Add range of hands defined by the "-" suffix.
+	For example: J7s-J3s, K8o-K5o, 88-22
+*/
+void CardRange::addCombosHyphen(unsigned rank1, unsigned rank2, unsigned rank3, unsigned rank4, bool suited, bool offsuited)
+{
+	if (rank1 == rank2 && rank3 == rank4) {
+        if (rank1 < rank3) {
+            std::swap(rank1, rank3);
+            std::swap(rank2, rank4);
+        }
+		for (unsigned r = rank3; r <= rank1; ++r)
+			addCombos(r, r, suited, offsuited);
+	} else if (rank1 != rank2 && rank3 != rank4) {
+		if (rank1 < rank2)
+			std::swap(rank1, rank2);
+		if (rank3 < rank4)
+			std::swap(rank3, rank4);
+		if (rank1 != rank3)
+			return;
+		if (rank2 < rank4)
+            std::swap(rank2, rank4);
+		for (unsigned r = rank4; r <= rank2; ++r)
+			addCombos(rank1, r, suited, offsuited);
+	}
+}
+
 void CardRange::addAll()
 {
     for (unsigned c1 = 0; c1 < CARD_COUNT; ++c1)
@@ -191,14 +229,14 @@ void CardRange::addCombo(unsigned c1, unsigned c2)
 void CardRange::removeDuplicates()
 {
     std::sort(mCombinations.begin(), mCombinations.end(), [](const std::array<uint8_t,2>& lhs,
-              const std::array<uint8_t,2>& rhs){
-        if (lhs[0] >> 2 != rhs[0] >> 2)
-            return lhs[0] >> 2 < rhs[0] >> 2;
-        if (lhs[1] >> 2 != rhs[1] >> 2)
-            return lhs[1] >> 2 < rhs[1] >> 2;
-        if ((lhs[0] & 3) != (rhs[0] & 3))
-            return (lhs[0] & 3) < (rhs[0] & 3);
-        return (lhs[1] & 3) < (rhs[1] & 3);
+                            const std::array<uint8_t,2>& rhs){
+	if (lhs[0] >> 2 != rhs[0] >> 2)
+		return lhs[0] >> 2 < rhs[0] >> 2;
+	if (lhs[1] >> 2 != rhs[1] >> 2)
+		return lhs[1] >> 2 < rhs[1] >> 2;
+	if ((lhs[0] & 3) != (rhs[0] & 3))
+		return (lhs[0] & 3) < (rhs[0] & 3);
+	return (lhs[1] & 3) < (rhs[1] & 3);
     });
     auto last = std::unique(mCombinations.begin(), mCombinations.end(), [](const std::array<uint8_t,2>& lhs,
                             const std::array<uint8_t,2>& rhs){
