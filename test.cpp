@@ -155,6 +155,20 @@ class HandTest : public ttest::TestBase
         Hand h = Hand::empty() + 6 + 10 + 14 + 18 + 22 + 26 + 3;
         TTEST_EQUAL(h.flushKey(), 0x7eu);
     }
+
+    TTEST_CASE("cardIndexes()")
+    {
+        Hand h = Hand::empty() + 6 + 10 + 14 + 18 + 22 + 26 + 3;
+        std::vector<unsigned> ci = h.cardIndexes();
+        TTEST_EQUAL(ci.size(), 7);
+        TTEST_EQUAL(ci[0], 26);
+        TTEST_EQUAL(ci[1], 22);
+        TTEST_EQUAL(ci[2], 18);
+        TTEST_EQUAL(ci[3], 14);
+        TTEST_EQUAL(ci[4], 10);
+        TTEST_EQUAL(ci[5], 6);
+        TTEST_EQUAL(ci[6], 3);
+    }
 };
 
 class HandEvaluatorTest : public ttest::TestBase

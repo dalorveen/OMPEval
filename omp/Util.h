@@ -54,6 +54,17 @@ inline unsigned countLeadingZeros(unsigned x)
     #endif
 }
 
+inline unsigned countLeadingZeros(unsigned long long x)
+{
+    #if _MSC_VER
+    unsigned long bitIdx;
+    _BitScanReverse64(&bitIdx, x);
+    return 63 - bitIdx;
+    #else
+    return __builtin_clz(x);
+    #endif
+}
+
 inline unsigned bitCount(unsigned x)
 {
     #if _MSC_VER
