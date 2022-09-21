@@ -166,18 +166,18 @@ struct Hand
         #endif
     }
 
-    std::vector<unsigned> cardIndexes() const
+    unsigned* cardIndexes() const
     {
         unsigned cardsCount = count();
         uint64_t m = mask();
-        std::vector<unsigned> v;
+        unsigned arr[] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
         for (unsigned i = 0; i < cardsCount; ++i) {
             unsigned shift = countLeadingZeros(m);
             m ^= (0x8000000000000000 >> shift);
             unsigned bitIndex = 63 - shift;
-            v.push_back(((bitIndex % 16 * 4) + 4 - ((bitIndex - bitIndex % 16) >> 4)) - 1);
+            arr[i] = ((bitIndex % 16 * 4) + 4 - ((bitIndex - bitIndex % 16) >> 4)) - 1;
         }
-        return v;
+        return arr;
     }
 
 private:

@@ -159,8 +159,7 @@ class HandTest : public ttest::TestBase
     TTEST_CASE("cardIndexes()")
     {
         Hand h = Hand::empty() + 6 + 10 + 14 + 18 + 22 + 26 + 3;
-        std::vector<unsigned> ci = h.cardIndexes();
-        TTEST_EQUAL(ci.size(), 7);
+        unsigned* ci = h.cardIndexes();
         TTEST_EQUAL(ci[0], 26);
         TTEST_EQUAL(ci[1], 22);
         TTEST_EQUAL(ci[2], 18);
@@ -168,6 +167,16 @@ class HandTest : public ttest::TestBase
         TTEST_EQUAL(ci[4], 10);
         TTEST_EQUAL(ci[5], 6);
         TTEST_EQUAL(ci[6], 3);
+
+        h -= 18;
+        ci = h.cardIndexes();
+        TTEST_EQUAL(ci[0], 26);
+        TTEST_EQUAL(ci[1], 22);
+        TTEST_EQUAL(ci[2], 14);
+        TTEST_EQUAL(ci[3], 10);
+        TTEST_EQUAL(ci[4], 6);
+        TTEST_EQUAL(ci[5], 3);
+        TTEST_EQUAL(ci[6], 0xffffffff);
     }
 };
 
