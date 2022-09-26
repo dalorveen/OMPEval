@@ -159,7 +159,7 @@ class HandTest : public ttest::TestBase
     TTEST_CASE("cardIndexes()")
     {
         Hand h = Hand::empty() + 6 + 10 + 14 + 18 + 22 + 26 + 3;
-        unsigned* ci = h.cardIndexes();
+        std::array<uint8_t, 7> ci = h.cardIndexes();
         TTEST_EQUAL(ci[0], 26);
         TTEST_EQUAL(ci[1], 22);
         TTEST_EQUAL(ci[2], 18);
@@ -176,7 +176,7 @@ class HandTest : public ttest::TestBase
         TTEST_EQUAL(ci[3], 10);
         TTEST_EQUAL(ci[4], 6);
         TTEST_EQUAL(ci[5], 3);
-        TTEST_EQUAL(ci[6], 0xffffffff);
+        TTEST_EQUAL(ci[6], 255);
     }
 };
 
@@ -324,6 +324,23 @@ class EquityCalculatorTest : public ttest::TestBase
         eq.wait();
         if (timeout)
             throw ttest::TestException("Didn't converge to correct results in time!");
+
+        auto results = eq.getResults();
+        
+        for (unsigned i = 0; i < tc.ranges.size(); ++i) {
+            double a = 0;
+            double b = 0;
+            std::vector<unsigned> actualHoleCardsId;
+            for (unsigned j = 0; j < COMBO_COUNT; ++j) {
+                a += results.holeCardsStats[i].wins[j] + results.holeCardsStats[i].ties[j];
+                b += results.holeCardsStats[i].hands[j];
+            }
+
+            double accuracy = 1e9;
+            double actual = ceil((results.equity[i] * accuracy)) / accuracy;
+            double expected = ceil(((a / b) * accuracy)) / accuracy;
+            TTEST_EQUAL(actual, expected);
+        }
     }
 
     TTEST_BEFORE()

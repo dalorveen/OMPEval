@@ -7,7 +7,6 @@
 #include <memory>
 #include <cstdint>
 #include <cassert>
-#include <vector>
 #if OMP_SSE2
     #include <xmmintrin.h> // SSE1
     #include <emmintrin.h> // SSE2
@@ -166,11 +165,11 @@ struct Hand
         #endif
     }
 
-    unsigned* cardIndexes() const
+    std::array<uint8_t, 7> cardIndexes() const
     {
         unsigned cardsCount = count();
         uint64_t m = mask();
-        unsigned arr[] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
+        std::array<uint8_t, 7> arr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
         for (unsigned i = 0; i < cardsCount; ++i) {
             unsigned shift = countLeadingZeros(m);
             m ^= (0x8000000000000000 >> shift);

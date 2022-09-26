@@ -246,14 +246,40 @@ void EquityCalculator::evaluateHands(const Hand* playerHands, unsigned nplayers,
     ++stats->evalCount;
     unsigned bestRank = 0;
     unsigned winnersMask = 0;
+    unsigned holeCardId[1 << MAX_PLAYERS] = {};
+    int winnerId = -1;
     for (unsigned i = 0, m = 1; i < nplayers; ++i, m <<= 1) {
         Hand hand = board + playerHands[i];
         unsigned rank = mEval.evaluate<tFlushPossible>(hand);
         if (rank > bestRank) {
             bestRank = rank;
             winnersMask = m;
+            winnerId = i;
         } else if (rank == bestRank) {
             winnersMask |= m;
+            winnerId = -1;
+        }
+
+        if (!mResults.enumerateAll) {
+            std::array<uint8_t, 7> cardIndexes = playerHands[i].cardIndexes();
+            omp_assert(cardIndexes[0] < CARD_COUNT && cardIndexes[1] < CARD_COUNT);
+            std::array<uint8_t, 2> holeCards = { cardIndexes[0], cardIndexes[1] };
+            holeCardId[m] = convertHoleCardsTo1326(holeCards);
+            stats->holeCardsStats[i].hands[holeCardId[m]] += 1;
+        }
+    }
+
+    if (!mResults.enumerateAll) {
+        if (winnerId == -1) {
+            unsigned winners = bitCount(winnersMask);
+            for (unsigned i = 0, m = 1; i < nplayers; ++i, m <<= 1) {
+                if ((winnersMask & m)) {
+                    stats->holeCardsStats[i].ties[holeCardId[m]] += 1 / (double)(winners);
+                }
+            }
+        }
+        else {
+            stats->holeCardsStats[winnerId].wins[holeCardId[winnersMask]] += 1;
         }
     }
 
@@ -415,7 +441,7 @@ void EquityCalculator::enumerateBoard(const HandWithPlayerIdx* playerHands, unsi
     }
     for (unsigned i = 0; i < SUIT_COUNT; ++i)
         suitCounts[i] += board.suitCount(i);
-
+    
     enumerateBoardRec(hands, nplayers, stats, board, deck, ndeck, suitCounts, remainingCards, 0, 1);
 }
 
@@ -615,10 +641,7 @@ uint64_t EquityCalculator::calculateUniquePreflopId(const HandWithPlayerIdx* pla
     // Basically we just map the preflop to a number in base 1327, where each digit represents a hand.
     for (unsigned i = 0; i < nplayers; ++i) {
         preflopId *= (CARD_COUNT * (CARD_COUNT - 1) >> 1) + 1; //1327
-        auto h = playerHands[i].cards;
-        if (h[0] < h[1])
-            std::swap(h[0], h[1]);
-        preflopId += (h[0] * (h[0] - 1) >> 1) + h[1] + 1; // map a hand to range [0, 1326]
+        preflopId += convertHoleCardsTo1326(playerHands[i].cards) + 1;
     }
     return preflopId;
 }
@@ -732,8 +755,13 @@ void EquityCalculator::updateResults(const BatchResults& stats, bool threadFinis
         if (!mResults.enumerateAll && mResults.stdev < mStdevTarget) //TODO use max stdev of any player
             mStopped = true;
 
-        for (unsigned i = 0; i < mResults.players; ++i)
+        for (unsigned i = 0; i < mResults.players; ++i) {
             mResults.equity[i] = (mResults.wins[i] + mResults.ties[i]) / (mResults.hands + 1e-9);
+
+            for (unsigned j = 0; j < COMBO_COUNT; ++j) {
+                mResults.holeCardsStats[i].equity[j] = (mResults.holeCardsStats[i].wins[j] + mResults.holeCardsStats[i].ties[j]) / (mResults.holeCardsStats[i].hands[j] + 1e-9);
+            }
+        }
 
         mUpdateResults = mResults;
 
@@ -760,6 +788,12 @@ double EquityCalculator::combineResults(const BatchResults& batch)
         unsigned actualPlayerMask = 0;
         for (unsigned j = 0; j < mResults.players; ++j) {
             if (i & (1 << j)) {
+                for (unsigned k = 0; k < COMBO_COUNT; ++k) {
+                    mResults.holeCardsStats[batch.playerIds[j]].hands[k] += batch.holeCardsStats[batch.playerIds[j]].hands[k];
+                    mResults.holeCardsStats[batch.playerIds[j]].wins[k] += batch.holeCardsStats[batch.playerIds[j]].wins[k];
+                    mResults.holeCardsStats[batch.playerIds[j]].ties[k] += batch.holeCardsStats[batch.playerIds[j]].ties[k];
+                }
+
                 if (winnerCount == 1) {
                     mResults.wins[batch.playerIds[j]] += batch.winsByPlayerMask[i];
                     if (batch.playerIds[j] == 0)

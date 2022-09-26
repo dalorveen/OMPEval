@@ -24,6 +24,34 @@ class EquityCalculator
 {
 public:
 
+    static unsigned convertHoleCardsTo1326(std::array<uint8_t, 2> cards)
+    {
+        if (cards[0] < cards[1]) {
+            std::swap(cards[0], cards[1]);
+        }
+        return (cards[0] * (cards[0] - 1) >> 1) + cards[1];
+    }
+
+    struct HoleCardsStats
+    {
+        unsigned hands[COMBO_COUNT] = {};
+        unsigned wins[COMBO_COUNT] = {};
+        double ties[COMBO_COUNT] = {};
+        double equity[COMBO_COUNT] = {};
+
+        double equityBy(std::array<uint8_t, 2> holeCards)
+        {
+            return equity[convertHoleCardsTo1326(holeCards)];
+        }
+
+        double equityBy(CardRange holeCards)
+        {
+            auto combos = holeCards.combinations();
+            omp_assert(combos.size() == 1);
+            return equity[convertHoleCardsTo1326(combos[0])];
+        }
+    };
+
     struct Results
     {
         // Number of players.
@@ -61,6 +89,8 @@ public:
         bool enumerateAll = false;
         // Is calculation finished. (Includes stopping.)
         bool finished = false;
+
+        HoleCardsStats holeCardsStats[MAX_PLAYERS] = {};
     };
 
     // Start a new calculation. Returns false if calculation is impossible for given hand ranges and board/dead cards.
@@ -138,6 +168,7 @@ private:
         uint64_t evalCount = 0;
         uint8_t playerIds[MAX_PLAYERS];
         unsigned winsByPlayerMask[1 << MAX_PLAYERS] = {};
+        HoleCardsStats holeCardsStats[MAX_PLAYERS] = {};
     };
 
     // Ad-hoc struct used when sorting hands.
