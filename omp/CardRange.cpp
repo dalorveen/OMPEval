@@ -69,6 +69,23 @@ uint64_t CardRange::getCardMask(const std::string& text)
     return cards;
 }
 
+bool CardRange::contains(const std::string& holeCards) const
+{
+    if (holeCards.length() != 4) {
+        return false;
+    }
+
+    CardRange range(holeCards);
+    std::array<uint8_t, 2> cardIndices = range.mCombinations[0];
+    for (auto combo : this->mCombinations) {
+        if (combo[0] == cardIndices[0] && combo[1] == cardIndices[1]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Parses a single hand and advances pointer p.
 bool CardRange::parseHand(const char*&p)
 {

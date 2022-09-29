@@ -443,6 +443,23 @@ class CardRangeTest : public ttest::TestBase
         CardRange expectedRange = CardRange("8s8h,8s8c,8s8d,8h8d,8h8c,8c8d,7s7h,7s7c,7s7d,7h7d,7h7c,7c7d,6s6h,6s6c,6s6d,6h6d,6h6c,6c6d");
         TTEST_EQUAL(range.combinations() == expectedRange.combinations(), true);
     }
+
+    TTEST_CASE("contains() returns true when holecards found in range")
+    {
+        CardRange range = CardRange("AJs-A5s,JJ,AQ");
+        TTEST_EQUAL(range.contains("AcTc"), true);
+        TTEST_EQUAL(range.contains("JsJd"), true);
+        TTEST_EQUAL(range.contains("AdQh"), true);
+        TTEST_EQUAL(range.contains("AcQc"), true);
+    }
+
+    TTEST_CASE("contains() returns false when holecards not found in range")
+    {
+        CardRange range = CardRange("AJs-A5s,33+,AQ+");
+        TTEST_EQUAL(range.contains("AcTd"), false);
+        TTEST_EQUAL(range.contains("2c2d"), false);
+        TTEST_EQUAL(range.contains("Ah4h"), false);
+    }
 };
 
 void printBuildInfo()

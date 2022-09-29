@@ -43,6 +43,8 @@ public:
     // Returns a 64-bit bitmask of cards from a string like "2c8hAh".
     static uint64_t getCardMask(const std::string& text);
 
+    bool contains(const std::string& holeCards) const;
+
 private:
     bool parseHand(const char*&p);
     bool parseRank(const char*&p, unsigned& rank);
